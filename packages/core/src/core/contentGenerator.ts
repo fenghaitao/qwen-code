@@ -47,6 +47,7 @@ export enum AuthType {
   CLOUD_SHELL = 'cloud-shell',
   USE_OPENAI = 'openai',
   QWEN_OAUTH = 'qwen-oauth',
+  GITHUB_COPILOT_OAUTH = 'github-copilot-oauth',
 }
 
 export type ContentGeneratorConfig = {
@@ -143,6 +144,17 @@ export function createContentGeneratorConfig(
     return contentGeneratorConfig;
   }
 
+  if (authType === AuthType.GITHUB_COPILOT_OAUTH) {
+    // For GitHub Copilot OAuth, we'll handle the API key dynamically in createContentGenerator
+    // Set a special marker to indicate this is GitHub Copilot OAuth
+    contentGeneratorConfig.apiKey = 'GITHUB_COPILOT_OAUTH_DYNAMIC_TOKEN';
+
+    // Use gpt-4 as the default GitHub Copilot model
+    contentGeneratorConfig.model = process.env.GITHUB_COPILOT_MODEL || 'gpt-4';
+
+    return contentGeneratorConfig;
+  }
+
   return contentGeneratorConfig;
 }
 
@@ -218,6 +230,36 @@ export async function createContentGenerator(
     } catch (error) {
       throw new Error(
         `Failed to initialize Qwen: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  if (config.authType === AuthType.GITHUB_COPILOT_OAUTH) {
+    console.log('Creating GitHub Copilot content generator...');
+    if (config.apiKey !== 'GITHUB_COPILOT_OAUTH_DYNAMIC_TOKEN') {
+      throw new Error('Invalid GitHub Copilot OAuth configuration');
+    }
+
+    // Import required classes dynamically
+    const { getGitHubCopilotOAuthClient } = await import(
+      '../github-copilot/githubCopilotOAuth2.js'
+    );
+    const { GitHubCopilotContentGenerator } = await import(
+      '../github-copilot/githubCopilotContentGenerator.js'
+    );
+
+    try {
+      console.log('Getting GitHub Copilot OAuth client...');
+      // Get the GitHub Copilot OAuth client (includes integrated token management)
+      const githubCopilotClient = await getGitHubCopilotOAuthClient(gcConfig);
+      console.log('GitHub Copilot OAuth client obtained successfully');
+
+      // Create the content generator with dynamic token management
+      return new GitHubCopilotContentGenerator(githubCopilotClient, config.model, gcConfig);
+    } catch (error) {
+      console.error('GitHub Copilot initialization error:', error);
+      throw new Error(
+        `Failed to initialize GitHub Copilot: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }
