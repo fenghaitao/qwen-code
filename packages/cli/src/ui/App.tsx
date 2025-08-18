@@ -23,6 +23,7 @@ import { useLoadingIndicator } from './hooks/useLoadingIndicator.js';
 import { useThemeCommand } from './hooks/useThemeCommand.js';
 import { useAuthCommand } from './hooks/useAuthCommand.js';
 import { useQwenAuth } from './hooks/useQwenAuth.js';
+import { useGitHubCopilotAuth } from './hooks/useGitHubCopilotAuth.js';
 import { useEditorSettings } from './hooks/useEditorSettings.js';
 import { useSlashCommandProcessor } from './hooks/slashCommandProcessor.js';
 import { useAutoAcceptIndicator } from './hooks/useAutoAcceptIndicator.js';
@@ -37,6 +38,7 @@ import { ThemeDialog } from './components/ThemeDialog.js';
 import { AuthDialog } from './components/AuthDialog.js';
 import { AuthInProgress } from './components/AuthInProgress.js';
 import { QwenOAuthProgress } from './components/QwenOAuthProgress.js';
+import { GitHubCopilotOAuthProgress } from './components/GitHubCopilotOAuthProgress.js';
 import { EditorSettingsDialog } from './components/EditorSettingsDialog.js';
 import { ShellConfirmationDialog } from './components/ShellConfirmationDialog.js';
 import { Colors } from './colors.js';
@@ -242,6 +244,15 @@ const App = ({ config, settings, startupWarnings = [], version }: AppProps) => {
     authMessage,
   } = useQwenAuth(settings, isAuthenticating);
 
+  const {
+    isGitHubCopilotAuthenticating,
+    deviceAuth: githubCopilotDeviceAuth,
+    isGitHubCopilotAuth,
+    cancelGitHubCopilotAuth,
+    authStatus: githubCopilotAuthStatus,
+    authMessage: githubCopilotAuthMessage,
+  } = useGitHubCopilotAuth(settings, isAuthenticating);
+
   useEffect(() => {
     if (settings.merged.selectedAuthType && !settings.merged.useExternalAuth) {
       const error = validateAuthMethod(settings.merged.selectedAuthType);
@@ -281,6 +292,27 @@ const App = ({ config, settings, startupWarnings = [], version }: AppProps) => {
     authStatus,
     authMessage,
     cancelQwenAuth,
+    cancelAuthentication,
+    openAuthDialog,
+    setAuthError,
+  ]);
+
+  // Handle GitHub Copilot OAuth timeout
+  useEffect(() => {
+    if (isGitHubCopilotAuth && githubCopilotAuthStatus === 'timeout') {
+      setAuthError(
+        githubCopilotAuthMessage ||
+          'GitHub Copilot OAuth authentication timed out. Please try again or select a different authentication method.',
+      );
+      cancelGitHubCopilotAuth();
+      cancelAuthentication();
+      openAuthDialog();
+    }
+  }, [
+    isGitHubCopilotAuth,
+    githubCopilotAuthStatus,
+    githubCopilotAuthMessage,
+    cancelGitHubCopilotAuth,
     cancelAuthentication,
     openAuthDialog,
     setAuthError,
@@ -921,6 +953,26 @@ const App = ({ config, settings, startupWarnings = [], version }: AppProps) => {
                   onCancel={() => {
                     setAuthError('Qwen OAuth authentication cancelled.');
                     cancelQwenAuth();
+                    cancelAuthentication();
+                    openAuthDialog();
+                  }}
+                />
+              ) : isGitHubCopilotAuth && isGitHubCopilotAuthenticating ? (
+                <GitHubCopilotOAuthProgress
+                  deviceAuth={githubCopilotDeviceAuth || undefined}
+                  authStatus={githubCopilotAuthStatus}
+                  authMessage={githubCopilotAuthMessage}
+                  onTimeout={() => {
+                    setAuthError(
+                      'GitHub Copilot OAuth authentication timed out. Please try again.',
+                    );
+                    cancelGitHubCopilotAuth();
+                    cancelAuthentication();
+                    openAuthDialog();
+                  }}
+                  onCancel={() => {
+                    setAuthError('GitHub Copilot OAuth authentication cancelled.');
+                    cancelGitHubCopilotAuth();
                     cancelAuthentication();
                     openAuthDialog();
                   }}

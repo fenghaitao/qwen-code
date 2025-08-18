@@ -80,8 +80,8 @@ interface OpenAIResponseFormat {
 
 export class OpenAIContentGenerator implements ContentGenerator {
   protected client: OpenAI;
-  private model: string;
-  private config: Config;
+  protected model: string;
+  protected config: Config;
   private streamingToolCalls: Map<
     number,
     {
@@ -563,7 +563,7 @@ export class OpenAIContentGenerator implements ContentGenerator {
 
     // Add combined text if any
     if (combinedText) {
-      combinedParts.push({ text: combinedText.trimEnd() });
+      combinedParts.push({ text: combinedText });
     }
 
     // Add function calls
@@ -750,7 +750,7 @@ export class OpenAIContentGenerator implements ContentGenerator {
    * @param geminiTools - Array of Gemini tools to convert
    * @returns Promise resolving to array of OpenAI-compatible tools
    */
-  private async convertGeminiToolsToOpenAI(
+  protected async convertGeminiToolsToOpenAI(
     geminiTools: ToolListUnion,
   ): Promise<OpenAI.Chat.ChatCompletionTool[]> {
     const openAITools: OpenAI.Chat.ChatCompletionTool[] = [];
@@ -809,7 +809,7 @@ export class OpenAIContentGenerator implements ContentGenerator {
     return openAITools;
   }
 
-  private convertToOpenAIFormat(
+  protected convertToOpenAIFormat(
     request: GenerateContentParameters,
   ): OpenAI.Chat.ChatCompletionMessageParam[] {
     const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [];
@@ -1154,7 +1154,7 @@ export class OpenAIContentGenerator implements ContentGenerator {
     return merged;
   }
 
-  private convertToGeminiFormat(
+  protected convertToGeminiFormat(
     openaiResponse: OpenAI.Chat.ChatCompletion,
   ): GenerateContentResponse {
     const choice = openaiResponse.choices[0];
@@ -1165,7 +1165,7 @@ export class OpenAIContentGenerator implements ContentGenerator {
     // Handle text content
     if (choice.message.content) {
       if (typeof choice.message.content === 'string') {
-        parts.push({ text: choice.message.content.trimEnd() });
+        parts.push({ text: choice.message.content });
       } else {
         parts.push({ text: choice.message.content });
       }
@@ -1242,7 +1242,7 @@ export class OpenAIContentGenerator implements ContentGenerator {
     return response;
   }
 
-  private convertStreamChunkToGeminiFormat(
+  protected convertStreamChunkToGeminiFormat(
     chunk: OpenAI.Chat.ChatCompletionChunk,
   ): GenerateContentResponse {
     const choice = chunk.choices?.[0];
@@ -1254,7 +1254,7 @@ export class OpenAIContentGenerator implements ContentGenerator {
       // Handle text content
       if (choice.delta?.content) {
         if (typeof choice.delta.content === 'string') {
-          parts.push({ text: choice.delta.content.trimEnd() });
+          parts.push({ text: choice.delta.content });
         } else {
           parts.push({ text: choice.delta.content });
         }
@@ -1373,7 +1373,7 @@ export class OpenAIContentGenerator implements ContentGenerator {
    * 2. Request-level parameters (medium priority)
    * 3. Default values (lowest priority)
    */
-  private buildSamplingParameters(
+  protected buildSamplingParameters(
     request: GenerateContentParameters,
   ): Record<string, unknown> {
     const configSamplingParams =
@@ -1776,7 +1776,7 @@ export class OpenAIContentGenerator implements ContentGenerator {
         }
       }
 
-      messageContent = textParts.join('').trimEnd();
+      messageContent = textParts.join('');
     }
 
     const choice: OpenAIChoice = {
