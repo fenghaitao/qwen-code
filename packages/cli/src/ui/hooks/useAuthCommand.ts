@@ -41,7 +41,14 @@ export const useAuthCommand = (
         await config.refreshAuth(authType);
         console.log(`Authenticated via "${authType}".`);
       } catch (e) {
-        setAuthError(`Failed to login. Message: ${getErrorMessage(e)}`);
+        // Check if the error is specifically about GitHub Copilot authentication being required
+        if (e instanceof Error && e.message === 'GITHUB_COPILOT_AUTH_REQUIRED') {
+          // For GitHub Copilot auth required, we don't want to show an error message
+          // but instead show the authentication menu
+          setAuthError(null);
+        } else {
+          setAuthError(`Failed to login. Message: ${getErrorMessage(e)}`);
+        }
         openAuthDialog();
       } finally {
         setIsAuthenticating(false);

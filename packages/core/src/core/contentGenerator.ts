@@ -257,6 +257,12 @@ export async function createContentGenerator(
       // Create the content generator with dynamic token management
       return new GitHubCopilotContentGenerator(githubCopilotClient, config.model, gcConfig);
     } catch (error) {
+      // Check if the error is specifically about authentication being required
+      if (error instanceof Error && error.message === 'GITHUB_COPILOT_AUTH_REQUIRED') {
+        // Re-throw this specific error to be handled by the UI layer
+        throw error;
+      }
+      
       console.error('GitHub Copilot initialization error:', error);
       throw new Error(
         `Failed to initialize GitHub Copilot: ${error instanceof Error ? error.message : String(error)}`,

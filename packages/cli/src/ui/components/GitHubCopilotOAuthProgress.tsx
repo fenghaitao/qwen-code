@@ -21,7 +21,8 @@ interface GitHubCopilotOAuthProgressProps {
     | 'success'
     | 'error'
     | 'timeout'
-    | 'rate_limit';
+    | 'rate_limit'
+    | 'auth_required';
   authMessage?: string | null;
 }
 

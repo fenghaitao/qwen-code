@@ -80,7 +80,8 @@ export class GitHubCopilotContentGenerator implements ContentGenerator {
   ): Promise<GenerateContentResponse> {
     const token = await this.client.getValidAccessToken();
     if (!token) {
-      throw new Error('GitHub Copilot authentication required. Please authenticate with GitHub Copilot first.');
+      // Emit an event to notify the UI that authentication is required
+      throw new Error('GITHUB_COPILOT_AUTH_REQUIRED');
     }
 
     const messages = this.convertToOpenAIMessages(request.contents as Content[]);
@@ -120,7 +121,8 @@ export class GitHubCopilotContentGenerator implements ContentGenerator {
   ): Promise<AsyncGenerator<GenerateContentResponse>> {
     const token = await this.client.getValidAccessToken();
     if (!token) {
-      throw new Error('GitHub Copilot authentication required. Please authenticate with GitHub Copilot first.');
+      // Emit an event to notify the UI that authentication is required
+      throw new Error('GITHUB_COPILOT_AUTH_REQUIRED');
     }
 
     const messages = this.convertToOpenAIMessages(request.contents as Content[]);

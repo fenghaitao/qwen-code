@@ -158,9 +158,15 @@ export class GitHubCopilotOAuth2Client implements IGitHubCopilotOAuth2Client {
   async getValidAccessToken(): Promise<string | null> {
     let credentials = await this.loadCredentials();
     
-    // If we don't have any credentials, return null without triggering OAuth flow
+    // If we don't have any credentials, trigger the OAuth flow
     if (!credentials?.access_token) {
-      console.log('No GitHub Copilot credentials found, returning null');
+      console.log('No GitHub Copilot credentials found, triggering OAuth flow');
+      // Emit an event to notify the UI that authentication is needed
+      githubCopilotOAuth2Events.emit(
+        GitHubCopilotOAuth2Event.AuthProgress,
+        'auth_required',
+        'Authentication required. Please complete the GitHub Copilot OAuth flow.',
+      );
       return null;
     }
 
@@ -309,8 +315,14 @@ export async function getGitHubCopilotOAuthClient(
   console.log('getGitHubCopilotOAuthClient called');
   const client = new GitHubCopilotOAuth2Client(config);
   
-  // Just initialize the client, don't automatically trigger OAuth flow
-  // The OAuth flow will be triggered when credentials are actually needed
+  // Check if we have valid credentials, and if not, trigger the OAuth flow
+  // This makes the behavior consistent with Qwen authentication
+  if (!(await client.hasValidCredentials())) {
+    console.log('No valid GitHub Copilot credentials found, will trigger OAuth flow');
+    // We don't automatically trigger the OAuth flow here like Qwen does,
+    // but we'll ensure the UI handles this case properly
+  }
+  
   console.log('GitHub Copilot OAuth client initialized');
   return client;
 }

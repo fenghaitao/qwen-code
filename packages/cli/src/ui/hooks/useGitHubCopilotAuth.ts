@@ -66,9 +66,21 @@ export function useGitHubCopilotAuth(
     };
 
     const handleAuthProgress = (
-      status: 'success' | 'error' | 'polling' | 'timeout' | 'rate_limit',
+      status: 'success' | 'error' | 'polling' | 'timeout' | 'rate_limit' | 'auth_required',
       message?: string,
     ) => {
+      // Special handling for auth_required status
+      if (status === 'auth_required') {
+        // Reset the authentication state to show the authentication menu
+        setAuthState(prev => ({
+          ...prev,
+          isGitHubCopilotAuthenticating: false,
+          authStatus: 'idle',
+          authMessage: message || null,
+        }));
+        return;
+      }
+      
       setAuthState(prev => ({
         ...prev,
         authStatus: status,
